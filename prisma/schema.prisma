@@ -1,0 +1,87 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Quiz {
+  id          String     @id @default(cuid())
+  title       String
+  description String     @default("")
+  category    String     @default("Geral")
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  questions   Question[]
+  sessions    GameSession[]
+}
+
+model Question {
+  id                  String   @id @default(cuid())
+  quizId              String
+  text                String
+  type                String   @default("multiple_choice") // multiple_choice or numeric
+  correctNumericAnswer Float?  // Only for numeric type questions
+  timeLimit           Int      @default(20)
+  order               Int      @default(0)
+  options             Option[]
+  quiz                Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  @@index([quizId])
+}
+
+model Option {
+  id         String   @id @default(cuid())
+  questionId String
+  text       String
+  isCorrect  Boolean  @default(false)
+  color      String   @default("gray")
+  order      Int      @default(0)
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([questionId])
+}
+
+model GameSession {
+  id        String   @id @default(cuid())
+  quizId    String
+  pin       String   @unique
+  status    String   @default("waiting") // waiting, active, finished
+  createdAt DateTime @default(now())
+  quiz      Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  players   Player[]
+
+  @@index([quizId])
+  @@index([pin])
+}
+
+model Player {
+  id            String      @id @default(cuid())
+  gameSessionId String
+  name          String
+  score         Int         @default(0)
+  socketId      String      @default("")
+  answers       PlayerAnswer[]
+  gameSession   GameSession @relation(fields: [gameSessionId], references: [id], onDelete: Cascade)
+
+  @@index([gameSessionId])
+}
+
+model PlayerAnswer {
+  id            String   @id @default(cuid())
+  playerId      String
+  questionId    String
+  optionId      String   @default("")
+  numericAnswer Float?   // Only for numeric type questions
+  timeElapsed   Int      @default(0)
+  isCorrect     Boolean  @default(false)
+  player        Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@index([playerId])
+  @@index([questionId])
+}

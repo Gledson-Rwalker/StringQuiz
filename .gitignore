@@ -1,0 +1,27 @@
+# Dependências
+node_modules
+/mini-services/quiz-service/node_modules
+
+# Build do Next.js
+.next/
+out/
+build/
+
+# Bancos de dados locais e logs
+*.db
+*.db-journal
+*.log
+npm-debug.log*
+
+# Variáveis de ambiente (Segurança)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Docker
+.dockerignore
+
+# Outros
+.DS_Store
