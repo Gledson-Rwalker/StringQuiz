@@ -13,8 +13,10 @@ RUN npm run build
 FROM node:20-slim AS runner
 WORKDIR /app
 RUN apt-get update && apt-get install -y openssl
+# Instalando TSX para rodar o serviço de quiz sem precisar compilar para JS
+RUN npm install -g tsx 
+
 ENV NODE_ENV=production
-# Render usa a porta 10000 por padrão, o Next vai rodar internamente na 3000
 ENV PORT=3000 
 
 COPY --from=builder /app/package*.json ./
@@ -28,8 +30,8 @@ COPY --from=builder /app/gateway.js ./gateway.js
 
 EXPOSE 10000
 
-# Comando para rodar o Quiz Service, o Next.js e o Gateway juntos e rodar o site
-CMD npx prisma db push && \
-    (node mini-services/quiz-service/index.ts & \
+# Usamos tsx para rodar o index.ts e garantimos que o banco sincronize antes
+CMD npx prisma db push --accept-data-loss && \
+    (tsx mini-services/quiz-service/index.ts & \
      node server.js & \
      node gateway.js)
