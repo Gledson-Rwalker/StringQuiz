@@ -28,8 +28,9 @@ COPY --from=builder /app/gateway.js ./gateway.js
 
 EXPOSE 10000
 
-# O segredo está aqui: PORT=3001 node server.js
-CMD for i in {1..5}; do npx prisma db push --accept-data-loss && break || sleep 5; done && \
-    (tsx mini-services/quiz-service/index.ts & \
-     PORT=3001 node server.js & \
-     node gateway.js)
+# O Gateway inicia primeiro para segurar a porta do Render, 
+# enquanto o banco e os serviços sobem em paralelo.
+CMD node gateway.js & \
+    tsx mini-services/quiz-service/index.ts & \
+    HOSTNAME=0.0.0.0 PORT=3001 node server.js & \
+    npx prisma db push --accept-data-loss
