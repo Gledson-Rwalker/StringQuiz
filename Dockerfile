@@ -28,7 +28,7 @@ COPY --from=builder /app/gateway.js ./gateway.js
 
 EXPOSE 10000
 
-# Comando para rodar o Quiz Service, o Next.js e o Gateway juntos
+# Comando para rodar o Quiz Service, o Next.js e o Gateway juntos e rodar o site
 CMD npx prisma db push && \
     (node mini-services/quiz-service/index.ts & \
      node server.js & \
