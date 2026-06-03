@@ -95,49 +95,33 @@ export async function PUT(
 
     const quiz = await db.quiz.findUnique({ where: { id: quizId } })
     if (!quiz) {
-      return NextResponse.json(
-        { error: 'Quiz not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Quiz not found' }, { status: 404 })
     }
 
-    // Get existing questions for this quiz
+    // 1. Buscar questões atuais para saber o que deletar
     const existingQuestions = await db.question.findMany({
       where: { quizId },
-      include: { options: true },
+      select: { id: true }
     })
 
-    const existingQuestionIds = new Set(existingQuestions.map((q) => q.id))
-    const incomingQuestionIds = new Set(
-      questions.filter((q) => q.id).map((q) => q.id!)
-    )
+    const incomingQuestionIds = questions.map(q => q.id).filter(Boolean) as string[]
+    const questionsToDelete = existingQuestions
+      .map(q => q.id)
+      .filter(id => !incomingQuestionIds.includes(id))
 
-    // Delete questions that are no longer in the list
-    const questionsToDelete = existingQuestionIds.difference(incomingQuestionIds)
-    for (const questionId of questionsToDelete) {
-      await db.question.delete({ where: { id: questionId } })
+    // Deletar questões removidas
+    if (questionsToDelete.length > 0) {
+      await db.question.deleteMany({
+        where: { id: { in: questionsToDelete } }
+      })
     }
 
-    // Upsert each question
+    // 2. Processar cada questão (Update ou Create)
     for (const questionData of questions) {
-      const existingOptions = questionData.id
-        ? existingQuestions.find((q) => q.id === questionData.id)?.options ?? []
-        : []
-      const existingOptionIds = new Set(existingOptions.map((o) => o.id))
-      const incomingOptionIds = new Set(
-        questionData.options.filter((o) => o.id).map((o) => o.id!)
-      )
-
-      // Delete options that are no longer in the list
-      const optionsToDelete = existingOptionIds.difference(incomingOptionIds)
-      for (const optionId of optionsToDelete) {
-        await db.option.delete({ where: { id: optionId } })
-      }
-
       const questionType = questionData.type || 'multiple_choice'
-
-      if (questionData.id && existingQuestionIds.has(questionData.id)) {
-        // Update existing question
+      
+      if (questionData.id) {
+        // Atualizar questão existente
         await db.question.update({
           where: { id: questionData.id },
           data: {
@@ -146,52 +130,33 @@ export async function PUT(
             correctNumericAnswer: questionType === 'numeric' ? (questionData.correctNumericAnswer ?? null) : null,
             timeLimit: questionData.timeLimit,
             order: questionData.order,
-            ...(questionType === 'multiple_choice' ? {
-              options: {
-                upsert: questionData.options.map((option) => ({
-                  where: { id: option.id ?? '__new__' },
-                  update: {
-                    text: option.text.trim(),
-                    isCorrect: option.isCorrect,
-                    color: option.color,
-                    order: option.order,
-                  },
-                  create: {
-                    text: option.text.trim(),
-                    isCorrect: option.isCorrect,
-                    color: option.color,
-                    order: option.order,
-                  },
-                })),
+            options: {
+              // Deletar opções que não vieram no novo payload
+              deleteMany: {
+                questionId: questionData.id,
+                id: { notIn: questionData.options.map(o => o.id).filter(Boolean) as string[] }
               },
-            } : {}),
+              // Upsert das opções restantes
+              upsert: questionData.options.map((option) => ({
+                where: { id: option.id || 'new-option-' + Math.random() },
+                update: {
+                  text: option.text.trim(),
+                  isCorrect: option.isCorrect,
+                  color: option.color,
+                  order: option.order,
+                },
+                create: {
+                  text: option.text.trim(),
+                  isCorrect: option.isCorrect,
+                  color: option.color,
+                  order: option.order,
+                },
+              })),
+            },
           },
         })
-
-        // Create options that don't exist yet (those with no id or __new__ id)
-        const newOptions = questionData.options.filter(
-          (o) => !o.id || !existingOptionIds.has(o.id)
-        )
-        for (const option of newOptions) {
-          // Check if already created by upsert (skip if already exists)
-          if (option.id && existingOptionIds.has(option.id)) continue
-          const alreadyExists = await db.option.findUnique({
-            where: { id: option.id ?? '' },
-          })
-          if (alreadyExists) continue
-
-          await db.option.create({
-            data: {
-              questionId: questionData.id,
-              text: option.text.trim(),
-              isCorrect: option.isCorrect,
-              color: option.color,
-              order: option.order,
-            },
-          })
-        }
       } else {
-        // Create new question with options (for multiple_choice) or without (for numeric)
+        // Criar nova questão
         await db.question.create({
           data: {
             quizId,
@@ -200,32 +165,25 @@ export async function PUT(
             correctNumericAnswer: questionType === 'numeric' ? (questionData.correctNumericAnswer ?? null) : null,
             timeLimit: questionData.timeLimit,
             order: questionData.order,
-            ...(questionType === 'multiple_choice' ? {
-              options: {
-                create: questionData.options.map((option) => ({
-                  text: option.text.trim(),
-                  isCorrect: option.isCorrect,
-                  color: option.color,
-                  order: option.order,
-                })),
-              },
-            } : {}),
+            options: {
+              create: questionData.options.map((option) => ({
+                text: option.text.trim(),
+                isCorrect: option.isCorrect,
+                color: option.color,
+                order: option.order,
+              })),
+            },
           },
         })
       }
     }
 
-    // Return updated quiz with all questions and options
     const updatedQuiz = await db.quiz.findUnique({
       where: { id: quizId },
       include: {
         questions: {
           orderBy: { order: 'asc' },
-          include: {
-            options: {
-              orderBy: { order: 'asc' },
-            },
-          },
+          include: { options: { orderBy: { order: 'asc' } } },
         },
       },
     })
@@ -233,10 +191,7 @@ export async function PUT(
     return NextResponse.json({ quiz: updatedQuiz })
   } catch (error) {
     console.error('Error updating questions:', error)
-    return NextResponse.json(
-      { error: 'Failed to update questions' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to update questions' }, { status: 500 })
   }
 }
 
