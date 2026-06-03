@@ -13,11 +13,9 @@ RUN npm run build
 FROM node:20-slim AS runner
 WORKDIR /app
 RUN apt-get update && apt-get install -y openssl
-# Instalando TSX para rodar o serviço de quiz sem precisar compilar para JS
 RUN npm install -g tsx 
 
 ENV NODE_ENV=production
-ENV PORT=3000 
 
 COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/.next/standalone ./
@@ -30,8 +28,8 @@ COPY --from=builder /app/gateway.js ./gateway.js
 
 EXPOSE 10000
 
-# Usamos tsx para rodar o index.ts e garantimos que o banco sincronize antes
-CMD npx prisma db push --accept-data-loss && \
+# O segredo está aqui: PORT=3001 node server.js
+CMD for i in {1..5}; do npx prisma db push --accept-data-loss && break || sleep 5; done && \
     (tsx mini-services/quiz-service/index.ts & \
-     node server.js & \
+     PORT=3001 node server.js & \
      node gateway.js)
