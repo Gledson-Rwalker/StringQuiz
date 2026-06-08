@@ -181,13 +181,16 @@ function DashboardView() {
               correctNumericAnswer: q.correctNumericAnswer ?? null,
               timeLimit: q.timeLimit,
               order: q.order,
-              options: q.options?.map((o: any) => ({
-                id: o.id,
-                text: o.text,
-                isCorrect: o.isCorrect,
-                color: o.color,
-                order: o.order,
-              })) || [],
+              // O SEGREDO ESTÁ AQUI: Aceitar opções tanto para multiple_choice quanto para multi_select
+              options: (q.type === 'multiple_choice' || q.type === 'multi_select') && q.options 
+                ? q.options.map((o: any) => ({
+                    id: o.id,
+                    text: o.text,
+                    isCorrect: o.isCorrect,
+                    color: o.color,
+                    order: o.order,
+                  })) 
+                : [],
             }))
           : [createEmptyQuestion(0)]
         setCurrentQuiz({ ...fullQuiz, questions })
