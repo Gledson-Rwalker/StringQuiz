@@ -35,6 +35,7 @@ export interface Player {
 }
 
 export type AppView =
+  | 'admin-login'
   | 'dashboard'
   | 'editor'
   | 'host-lobby'
@@ -138,7 +139,7 @@ interface AppStore {
 }
 
 const initialState = {
-  view: 'dashboard' as AppView,
+  view: 'player-join' as AppView,
   quizzes: [],
   currentQuiz: null,
   sessionId: null,

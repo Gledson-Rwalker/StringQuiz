@@ -10,7 +10,7 @@ import {
   Hash, Zap, Brain, Tag, Database, UserPlus, LogOut,
   RotateCcw, Crown, Medal, Award, CircleDot, Timer,
   ArrowRight, Send, Sparkles, Gamepad2, Hash as HashIcon,
-  Calculator, Target, TrendingUp, ThumbsUp, Hand
+  Calculator, Target, TrendingUp, ThumbsUp, Hand, Lock
 } from 'lucide-react'
 
 import { useAppStore, Quiz, QuizQuestion, QuizOption, Player, NumericAnswerResult } from '@/lib/store'
@@ -111,6 +111,52 @@ function connectSocket(): Socket {
   })
 
   return socket
+}
+
+function AdminLoginView() {
+  const { setView } = useAppStore()
+  const [password, setPassword] = useState('')
+
+  const handleLogin = () => {
+    // Você pode mudar essa senha para a que preferir
+    if (password === 'admin123') { 
+      setView('dashboard')
+    } else {
+      toast.error('Senha incorreta')
+    }
+  }
+
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-[#1E293B] text-white px-4">
+      <Card className="w-full max-w-sm bg-slate-800 border-slate-700">
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl text-white flex items-center justify-center gap-2">
+            <Lock className="size-5 text-emerald-400" />
+            Acesso Restrito
+          </CardTitle>
+          <CardDescription className="text-slate-400">Área exclusiva para organizadores</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Digite a senha"
+              className="bg-slate-900 border-slate-600 text-white text-center text-lg"
+              onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
+            />
+          </div>
+          <Button className="w-full bg-emerald-600 hover:bg-emerald-700 h-12 text-lg" onClick={handleLogin}>
+            Entrar no Painel
+          </Button>
+          <Button variant="ghost" className="w-full text-slate-400 hover:text-white" onClick={() => setView('player-join')}>
+            Voltar para o Jogo
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
+  )
 }
 
 // ─── Dashboard View ───────────────────────────────────────────────────────────
@@ -274,10 +320,10 @@ function DashboardView() {
               <Button
                 variant="outline"
                 onClick={() => setView('player-join')}
-                className="bg-amber-500 hover:bg-amber-600 text-white border-none shadow-md"
+                className="border-slate-500 text-white hover:bg-slate-700"
               >
-                <UserPlus className="size-4" />
-                Entrar em um Quiz
+                <LogOut className="size-4 mr-2" />
+                Sair do Painel
               </Button>
             </div>
           </div>
@@ -2075,16 +2121,20 @@ function PlayerJoinView() {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#1E293B] text-white">
-      <header className="px-4 sm:px-6 py-4 flex items-center gap-4">
+      <header className="px-4 sm:px-6 py-4 flex items-center justify-between">
+        <h1 className="text-xl font-bold flex items-center gap-2">
+          <Brain className="size-6 text-emerald-400" />
+          QuizCorp
+        </h1>
         <Button
           variant="ghost"
-          size="icon"
-          className="text-white hover:bg-slate-700"
-          onClick={() => setView('dashboard')}
+          size="sm"
+          className="text-slate-400 hover:text-white"
+          onClick={() => setView('admin-login')}
         >
-          <ArrowLeft className="size-5" />
+          <Lock className="size-4 mr-2" />
+          Admin
         </Button>
-        <h1 className="text-lg font-semibold">Entrar em um Quiz</h1>
       </header>
 
       <main className="flex-1 flex flex-col items-center justify-center px-4 py-8">
@@ -2917,6 +2967,7 @@ export default function Home() {
   const { view } = useAppStore()
   return (
     <AnimatePresence mode="wait">
+      {view === 'admin-login' && <AdminLoginView key="admin-login" />}
       {view === 'dashboard' && <DashboardView key="dashboard" />}
       {view === 'editor' && <EditorView key="editor" />}
       {view === 'host-lobby' && <HostLobbyView key="host-lobby" />}
