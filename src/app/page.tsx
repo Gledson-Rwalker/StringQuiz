@@ -525,18 +525,23 @@ function EditorView() {
 
   const updateQuestionType = (index: number, type: 'multiple_choice' | 'numeric' | 'multi_select') => {
     const newQuestions = [...questions]
+    const currentQuestion = newQuestions[index]
+
     if (type === 'numeric') {
-      newQuestions[index] = { ...newQuestions[index], type, options: [], correctNumericAnswer: null }
+      newQuestions[index] = { ...currentQuestion, type, options: [], correctNumericAnswer: null }
     } else {
+      // Se já tinha opções, mantém. Se não (veio de numérica), cria as 4 padrão.
+      const existingOptions = currentQuestion.options.length > 0 ? currentQuestion.options : OPTION_COLOR_NAMES.map((color, i) => ({
+        text: '',
+        isCorrect: i === 0,
+        color,
+        order: i,
+      }))
+
       newQuestions[index] = {
-        ...newQuestions[index],
+        ...currentQuestion,
         type,
-        options: OPTION_COLOR_NAMES.map((color, i) => ({
-          text: newQuestions[index].options[i]?.text || '',
-          isCorrect: i === 0,
-          color,
-          order: i,
-        })),
+        options: existingOptions,
         correctNumericAnswer: undefined,
       }
     }
@@ -586,21 +591,21 @@ function EditorView() {
       return
     }
 
-    // Validate multiple choice questions
-    const mcQuestions = questions.filter((q) => q.type !== 'numeric')
-    const hasEmptyOption = mcQuestions.some((q) => q.options.some((o) => !o.text.trim()))
+    // Filtra perguntas que possuem opções (Única ou Múltipla Seleção)
+    const optionQuestions = questions.filter((q) => q.type === 'multiple_choice' || q.type === 'multi_select')
+    
+    const hasEmptyOption = optionQuestions.some((q) => q.options.some((o) => !o.text.trim()))
     if (hasEmptyOption) {
       toast.error('Todas as opções devem ter texto')
       return
     }
 
-    const hasNoCorrect = mcQuestions.some((q) => !q.options.some((o) => o.isCorrect))
+    const hasNoCorrect = optionQuestions.some((q) => !q.options.some((o) => o.isCorrect))
     if (hasNoCorrect) {
-      toast.error('Cada pergunta de múltipla escolha deve ter uma opção correta')
+      toast.error('Cada pergunta de múltipla escolha ou seleção deve ter pelo menos uma opção correta')
       return
     }
 
-    // Validate numeric questions
     const numQuestions = questions.filter((q) => q.type === 'numeric')
     const hasNoNumericAnswer = numQuestions.some((q) => q.correctNumericAnswer === null || q.correctNumericAnswer === undefined)
     if (hasNoNumericAnswer) {
@@ -610,14 +615,12 @@ function EditorView() {
 
     setIsSaving(true)
     try {
-      // Update quiz metadata
       await fetch(`/api/quizzes/${quizId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title: quizTitle, description: quizDesc, category: quizCategory }),
       })
 
-      // Bulk update questions
       const questionsPayload = questions.map((q, idx) => ({
         id: q.id,
         text: q.text,
@@ -625,7 +628,7 @@ function EditorView() {
         correctNumericAnswer: q.type === 'numeric' ? q.correctNumericAnswer : null,
         timeLimit: q.timeLimit,
         order: idx,
-        options: q.type === 'multiple_choice' ? q.options.map((o) => ({
+        options: (q.type === 'multiple_choice' || q.type === 'multi_select') ? q.options.map((o) => ({
           id: o.id,
           text: o.text,
           isCorrect: o.isCorrect,
