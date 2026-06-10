@@ -306,10 +306,7 @@ function DashboardView() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight flex items-center gap-2">
-                <Brain className="size-8 text-emerald-400" />
-                StringQuiz
-              </h1>
+              <img src="/logo.png" alt="StringQuiz Logo" className="h-14 w-auto object-contain" />
               <p className="text-slate-300 mt-1 text-sm sm:text-base">Seu quiz interativo junto com a sua turma</p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -2122,10 +2119,7 @@ function PlayerJoinView() {
   return (
     <div className="min-h-screen flex flex-col bg-[#1E293B] text-white">
       <header className="px-4 sm:px-6 py-4 flex items-center justify-between">
-        <h1 className="text-xl font-bold flex items-center gap-2">
-          <Brain className="size-6 text-emerald-400" />
-          QuizCorp
-        </h1>
+        <img src="/logo.png" alt="StringQuiz Logo" className="h-8 w-auto object-contain" />
         <Button
           variant="ghost"
           size="sm"
@@ -2144,7 +2138,7 @@ function PlayerJoinView() {
           className="w-full max-w-sm"
         >
           <div className="text-center mb-8">
-            <Gamepad2 className="size-16 text-emerald-400 mx-auto mb-4" />
+            <img src="/logo.png" alt="StringQuiz Logo" className="h-24 w-auto mx-auto mb-6 object-contain drop-shadow-lg" />
             <h2 className="text-2xl font-bold">Entrar no Jogo</h2>
             <p className="text-slate-300 mt-1">Insira o código e seu nome</p>
           </div>
