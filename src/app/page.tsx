@@ -150,7 +150,7 @@ function AdminLoginView() {
           <Button className="w-full bg-emerald-600 hover:bg-emerald-700 h-12 text-lg" onClick={handleLogin}>
             Entrar no Painel
           </Button>
-          <Button variant="ghost" className="w-full text-slate-400 hover:text-white" onClick={() => setView('player-join')}>
+          <Button variant="ghost" className="bg-amber-500 hover:bg-amber-600 text-white border-none shadow-md" onClick={() => setView('player-join')}>
             Voltar para o Jogo
           </Button>
         </CardContent>
@@ -2122,7 +2122,7 @@ function PlayerJoinView() {
         <Button
           variant="ghost"
           size="sm"
-          className="text-slate-400 hover:text-white"
+          className="bg-amber-500 hover:bg-amber-600 text-white border-none shadow-md"
           onClick={() => setView('admin-login')}
         >
           <Lock className="size-4 mr-2" />
