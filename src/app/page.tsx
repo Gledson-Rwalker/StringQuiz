@@ -315,14 +315,13 @@ function DashboardView() {
                 Criar Novo Quiz
               </Button>
               <Button
-                variant="outline"
                 onClick={() => setView('player-join')}
-                className="border-slate-500 text-white hover:bg-slate-700"
+                className="bg-amber-500 hover:bg-amber-600 text-white border-none shadow-md"
               >
                 <LogOut className="size-4 mr-2" />
                 Sair do Painel
               </Button>
-            </div>
+             </div>
           </div>
         </div>
       </header>
